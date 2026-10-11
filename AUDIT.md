@@ -87,3 +87,10 @@ Branch `hardening/security-risk-reconciliation` adds:
 **Integration caveat:** the existing browser frontend does not yet provide a secure operator login/token flow. Do not expose control endpoints to the public internet until that UI/authentication integration is completed. WebSocket authentication currently uses a query token because browser WebSocket APIs do not support arbitrary Authorization headers; query tokens can appear in logs, so use a short-lived authenticated proxy/session before production.
 
 These changes are defense-in-depth, not a production security certification. Live order execution remains intentionally unimplemented and must stay disabled.
+Additional changes in the same hardening branch:
+- BTC paper-trade sizing now respects the configured MAX_TRADE_SIZE cap and skips orders below the minimum rather than raising them to the minimum.
+- Weather paper-trade sizing now respects per-trade, bankroll-fraction, and remaining aggregate weather-allocation limits; the stored platform now matches the discovered market venue.
+- Settlement calibration now normalizes yes/no and up/down directions before comparing a prediction to the first-outcome settlement value.
+- Added settlement/P&L fixture tests in tests/test_settlement.py and a GitHub Actions workflow to run them.
+
+Validation status: the workflow file and tests were pushed, but no completed CI run or local test result was available at the time this audit update was written. The new tests do not validate live venue order execution, real fills, fees, slippage, or contract-specific settlement semantics.
