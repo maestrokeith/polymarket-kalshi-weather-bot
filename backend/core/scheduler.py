@@ -53,11 +53,11 @@ def get_recent_events(limit: int = 50) -> List[dict]:
 
 
 async def scan_and_trade_job():
-    """
-    Background job: Scan BTC 5-min markets, generate signals, execute trades.
-    Runs every minute.
-    """
-    log_event("info", "Scanning BTC 5-min markets...")
+    """Scan BTC markets; current implementation only records paper trades."""
+    if not settings.SIMULATION_MODE:
+        log_event("error", "LIVE MODE BLOCKED: no verified live order executor is installed; no trades submitted")
+        return
+    log_event("info", "Scanning BTC 5-min markets (PAPER MODE)...")
 
     try:
         signals = await scan_for_signals()
@@ -184,11 +184,11 @@ async def scan_and_trade_job():
 
 
 async def weather_scan_and_trade_job():
-    """
-    Background job: Scan weather temperature markets, generate signals, execute trades.
-    Runs every 5 minutes when WEATHER_ENABLED.
-    """
-    log_event("info", "Scanning weather temperature markets...")
+    """Scan weather markets; current implementation only records paper trades."""
+    if not settings.SIMULATION_MODE:
+        log_event("error", "LIVE MODE BLOCKED: no verified live order executor is installed; no trades submitted")
+        return
+    log_event("info", "Scanning weather temperature markets (PAPER MODE)...")
 
     try:
         from backend.core.weather_signals import scan_for_weather_signals
