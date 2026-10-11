@@ -53,11 +53,11 @@ def get_recent_events(limit: int = 50) -> List[dict]:
 
 
 async def scan_and_trade_job():
-    """
-    Background job: Scan BTC 5-min markets, generate signals, execute trades.
-    Runs every minute.
-    """
-    log_event("info", "Scanning BTC 5-min markets...")
+    """Scan BTC markets; current implementation only records paper trades."""
+    if not settings.SIMULATION_MODE:
+        log_event("error", "LIVE MODE BLOCKED: no verified live order executor is installed; no trades submitted")
+        return
+    log_event("info", "Scanning BTC 5-min markets (PAPER MODE)...")
 
     try:
         signals = await scan_for_signals()
@@ -115,8 +115,10 @@ async def scan_and_trade_job():
                 if existing:
                     continue
 
-                trade_size = min(signal.suggested_size, state.bankroll * MAX_TRADE_FRACTION)
-                trade_size = max(trade_size, MIN_TRADE_SIZE)
+                trade_size = min(signal.suggested_size, state.bankroll * MAX_TRADE_FRACTION, settings.MAX_TRADE_SIZE)
+                if trade_size < MIN_TRADE_SIZE:
+                    log_event("warning", f"Trade skipped: calculated size ${trade_size:.2f} is below minimum ${MIN_TRADE_SIZE:.2f}")
+                    continue
 
                 if state.bankroll < MIN_TRADE_SIZE:
                     log_event("warning", f"Bankroll too low: ${state.bankroll:.2f}")
@@ -184,11 +186,11 @@ async def scan_and_trade_job():
 
 
 async def weather_scan_and_trade_job():
-    """
-    Background job: Scan weather temperature markets, generate signals, execute trades.
-    Runs every 5 minutes when WEATHER_ENABLED.
-    """
-    log_event("info", "Scanning weather temperature markets...")
+    """Scan weather markets; current implementation only records paper trades."""
+    if not settings.SIMULATION_MODE:
+        log_event("error", "LIVE MODE BLOCKED: no verified live order executor is installed; no trades submitted")
+        return
+    log_event("info", "Scanning weather temperature markets (PAPER MODE)...")
 
     try:
         from backend.core.weather_signals import scan_for_weather_signals
@@ -229,6 +231,7 @@ async def weather_scan_and_trade_job():
             if weather_pending >= MAX_WEATHER_ALLOCATION:
                 log_event("info", f"Weather allocation limit reached: ${weather_pending:.0f}/${MAX_WEATHER_ALLOCATION:.0f}")
                 return
+            weather_remaining = MAX_WEATHER_ALLOCATION - weather_pending
 
             trades_executed = 0
             for signal in actionable[:MAX_TRADES_PER_SCAN]:
@@ -241,8 +244,10 @@ async def weather_scan_and_trade_job():
                 if existing:
                     continue
 
-                trade_size = min(signal.suggested_size, settings.WEATHER_MAX_TRADE_SIZE)
-                trade_size = max(trade_size, MIN_TRADE_SIZE)
+                trade_size = min(signal.suggested_size, settings.WEATHER_MAX_TRADE_SIZE, weather_remaining, state.bankroll * 0.03)
+                if trade_size < MIN_TRADE_SIZE:
+                    log_event("warning", f"Weather trade skipped: remaining risk budget ${trade_size:.2f} is below minimum ${MIN_TRADE_SIZE:.2f}")
+                    continue
 
                 if state.bankroll < MIN_TRADE_SIZE:
                     log_event("warning", f"Bankroll too low: ${state.bankroll:.2f}")
@@ -255,7 +260,7 @@ async def weather_scan_and_trade_job():
 
                 trade = Trade(
                     market_ticker=signal.market.market_id,
-                    platform="polymarket",
+                    platform=signal.market.platform,
                     event_slug=signal.market.slug,
                     market_type="weather",
                     direction=signal.direction,
@@ -281,6 +286,7 @@ async def weather_scan_and_trade_job():
 
                 state.total_trades += 1
                 trades_executed += 1
+                weather_remaining -= trade_size
 
                 log_event("trade",
                     f"WX {signal.market.city_name}: {signal.direction.upper()} "

@@ -273,9 +273,11 @@ async def settle_pending_trades(db: Session) -> List[Trade]:
                 if trade.signal_id:
                     linked_signal = db.query(Signal).filter(Signal.id == trade.signal_id).first()
                     if linked_signal:
-                        actual_outcome = "up" if settlement_value == 1.0 else "down"
+                        actual_outcome = "yes" if settlement_value == 1.0 else "no"
                         linked_signal.actual_outcome = actual_outcome
-                        linked_signal.outcome_correct = (linked_signal.direction == actual_outcome)
+                        predicted = (linked_signal.direction or "").lower()
+                        predicted_yes = predicted in {"up", "yes"}
+                        linked_signal.outcome_correct = (predicted_yes == (settlement_value == 1.0))
                         linked_signal.settlement_value = settlement_value
                         linked_signal.settled_at = datetime.utcnow()
         except Exception as e:

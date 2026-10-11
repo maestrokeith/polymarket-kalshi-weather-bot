@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     # Database (SQLite for Phase 1, PostgreSQL for production)
     DATABASE_URL: str = "sqlite:///./tradingbot.db"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    ADMIN_API_TOKEN: Optional[str] = None
 
     # API Keys (optional)
     POLYMARKET_API_KEY: Optional[str] = None
