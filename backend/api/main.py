@@ -1,5 +1,5 @@
 """FastAPI backend for BTC 5-min trading bot dashboard."""
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ from typing import List, Optional
 import asyncio
 import json
 import os
+import hmac
 
 from backend.config import settings
 from backend.models.database import (
@@ -27,12 +28,26 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",") if origin.strip()],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
+# Fail-closed protection for state-changing API requests.
+# Set ADMIN_API_TOKEN in the deployment environment; never commit the token.
+@app.middleware("http")
+async def protect_mutations(request: Request, call_next):
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path.startswith("/api/"):
+        configured = settings.ADMIN_API_TOKEN
+        if not configured:
+            from starlette.responses import JSONResponse
+            return JSONResponse(status_code=503, content={"detail": "Administrative API disabled: ADMIN_API_TOKEN is not configured"})
+        supplied = request.headers.get("authorization", "")
+        if not hmac.compare_digest(supplied, f"Bearer {configured}"):
+            from starlette.responses import JSONResponse
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    return await call_next(request)
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -241,13 +256,14 @@ async def startup():
                 total_trades=0,
                 winning_trades=0,
                 total_pnl=0.0,
-                is_running=True
+                is_running=False
             )
             db.add(state)
             db.commit()
             print(f"Created new bot state with ${settings.INITIAL_BANKROLL:,.2f} bankroll")
         else:
-            state.is_running = True
+            # Never resume trading automatically after process restart.
+            state.is_running = False
             db.commit()
             print(f"Loaded bot state: Bankroll ${state.bankroll:,.2f}, P&L ${state.total_pnl:+,.2f}, {state.total_trades} trades")
     finally:
@@ -1007,6 +1023,11 @@ async def get_dashboard(db: Session = Depends(get_db)):
 
 @app.websocket("/ws/events")
 async def websocket_events(websocket: WebSocket):
+    configured = settings.ADMIN_API_TOKEN
+    supplied = websocket.query_params.get("token", "")
+    if not configured or not hmac.compare_digest(supplied, configured):
+        await websocket.close(code=1008, reason="Unauthorized")
+        return
     await ws_manager.connect(websocket)
 
     try:
