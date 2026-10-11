@@ -32,12 +32,13 @@ export function TradingModeControl() {
     }
   }, [])
 
-  const paper = status?.simulation_mode !== false
+  const paper = status?.simulation_mode === true
+  const label = status === null ? 'MODE UNKNOWN' : paper ? 'PAPER ACTIVE' : 'LIVE BLOCKED'
 
   return (
     <div className="flex items-center gap-1.5 shrink-0" title={status?.message || 'Unable to verify trading mode'}>
       <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase border border-amber-500/30 bg-amber-500/10 text-amber-300">
-        {paper ? 'PAPER ACTIVE' : 'LIVE BLOCKED'}
+        {label}
       </span>
       <button
         type="button"
