@@ -10,6 +10,7 @@ import os
 import hmac
 
 from backend.config import settings
+from backend.core.trading_mode import router as trading_mode_router
 from backend.models.database import (
     get_db, init_db, SessionLocal,
     Signal, Trade, BotState, AILog, ScanLog
@@ -25,6 +26,8 @@ app = FastAPI(
     description="Polymarket BTC Up/Down 5-minute market trading bot",
     version="3.0.0"
 )
+
+app.include_router(trading_mode_router)
 
 app.add_middleware(
     CORSMiddleware,
