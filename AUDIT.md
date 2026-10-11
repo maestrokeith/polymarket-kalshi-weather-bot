@@ -74,3 +74,16 @@ This was a source inspection via repository files; tests, dependency vulnerabili
 - `backend/data/weather.py`
 - `backend/models/database.py`
 - `railway.json`
+
+## Hardening follow-up branch
+
+Branch `hardening/security-risk-reconciliation` adds:
+- Explicit allowed-origin configuration instead of wildcard CORS.
+- Fail-closed bearer-token protection for state-changing `/api/*` requests.
+- Token requirement for the event WebSocket.
+- Paused-by-default startup so a restart does not automatically resume the bot.
+- `.env.example` entries for `ADMIN_API_TOKEN` and `ALLOWED_ORIGINS`.
+
+**Integration caveat:** the existing browser frontend does not yet provide a secure operator login/token flow. Do not expose control endpoints to the public internet until that UI/authentication integration is completed. WebSocket authentication currently uses a query token because browser WebSocket APIs do not support arbitrary Authorization headers; query tokens can appear in logs, so use a short-lived authenticated proxy/session before production.
+
+These changes are defense-in-depth, not a production security certification. Live order execution remains intentionally unimplemented and must stay disabled.
