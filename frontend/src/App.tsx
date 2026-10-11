@@ -12,6 +12,7 @@ import { CalibrationPanel } from './components/CalibrationPanel'
 import { WeatherPanel } from './components/WeatherPanel'
 import { EdgeDistribution } from './components/EdgeDistribution'
 import { formatCountdown } from './utils'
+import { TradingModeControl } from './components/TradingModeControl'
 import type { BtcWindow } from './types'
 
 const GlobeView = lazy(() => import('./components/GlobeView').then(m => ({ default: m.GlobeView })))
@@ -170,11 +171,12 @@ function App() {
               ? 'bg-green-500/10 text-green-500 border border-green-500/20'
               : 'bg-neutral-800 text-neutral-500 border border-neutral-700'
           }`}>
-            {stats.is_running ? 'Live' : 'Idle'}
+            {stats.is_running ? 'Running' : 'Idle'}
           </span>
           <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            Sim
+            PAPER
           </span>
+          <TradingModeControl />
         </div>
 
         {btcPrice && (
