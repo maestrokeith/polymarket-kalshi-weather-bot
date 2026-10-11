@@ -32,6 +32,8 @@ class Settings(BaseSettings):
 
     # Bot settings - BTC 5-MIN TRADING
     SIMULATION_MODE: bool = True
+    # Must remain false until live execution and fill reconciliation are verified.
+    LIVE_TRADING_ENABLED: bool = False
     INITIAL_BANKROLL: float = 10000.0
     KELLY_FRACTION: float = 0.15  # Fractional Kelly
 
