@@ -12,8 +12,17 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
     ADMIN_API_TOKEN: Optional[str] = None
 
-    # API Keys (optional)
+    # Polymarket credentials are optional and are never needed for public Gamma
+    # market-data reads. Keep trading disabled until an executor and fill
+    # reconciliation have been reviewed and tested.
+    POLYMARKET_ENABLED: bool = False
     POLYMARKET_API_KEY: Optional[str] = None
+    POLYMARKET_API_SECRET: Optional[str] = None
+    POLYMARKET_API_PASSPHRASE: Optional[str] = None
+    POLYMARKET_PRIVATE_KEY: Optional[str] = None
+    POLYMARKET_FUNDER_ADDRESS: Optional[str] = None
+    POLYMARKET_SIGNATURE_TYPE: Optional[int] = None
+    POLYMARKET_CHAIN_ID: int = 137
 
     # Kalshi API
     KALSHI_API_KEY_ID: Optional[str] = None
