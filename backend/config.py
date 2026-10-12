@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     POLYMARKET_API_PASSPHRASE: Optional[str] = None
     POLYMARKET_PRIVATE_KEY: Optional[str] = None
     POLYMARKET_FUNDER_ADDRESS: Optional[str] = None
-    POLYMARKET_SIGNATURE_TYPE: Optional[int] = None
+    # String permits an unset/empty value in .env.example; validate/convert it
+    # explicitly when the authenticated client is implemented.
+    POLYMARKET_SIGNATURE_TYPE: Optional[str] = None
     POLYMARKET_CHAIN_ID: int = 137
 
     # Kalshi API
